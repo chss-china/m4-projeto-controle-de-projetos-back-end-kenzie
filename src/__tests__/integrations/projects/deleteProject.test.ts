@@ -48,7 +48,7 @@ describe("DELETE - /projects/:id", () => {
   });
 
   it("Falha - Tentando deletar um projeto com project id inválido.", async () => {
-    const response = await supertest(app).get(`/projects/999`);
+    const response = await supertest(app).delete(`/projects/999`);
 
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty("message");

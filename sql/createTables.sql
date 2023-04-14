@@ -4,12 +4,12 @@
    email VARCHAR(50) UNIQUE NOT NULL
  );
 
-CREATE TYPE OS AS ENUM ('Windows','Linux','MacOS');
+CREATE TYPE "OS" AS ENUM ('Windows','Linux','MacOS');
 
 CREATE TABLE developer_infos(
   id SERIAL PRIMARY KEY,
   "developerSince" TIMESTAMP NOT NULL,
-  "preferredOS" OS NOT NULL,
+  "preferredOS" "OS" NOT NULL,
   "developerId" INTEGER NOT NULL UNIQUE,
    FOREIGN KEY ("developerId") REFERENCES developers("id") ON DELETE CASCADE
    );
@@ -25,6 +25,7 @@ repository VARCHAR(120) NOT NULL,
  "developerId" INTEGER,
  FOREIGN KEY ("developerId") REFERENCES developers("id") ON DELETE SET NULL
  );
+
 
  CREATE TABLE technologies(
  id SERIAL PRIMARY KEY,
