@@ -17,7 +17,7 @@ export const verfifyIdProjectsDeveloper = async (
     SELECT 
       * 
     FROM
-    developers
+      developers
     WHERE 
      id = $1
     `;
@@ -35,7 +35,7 @@ export const verfifyIdProjectsDeveloper = async (
   res.locals.developer = queryResult.rows[0];
   return next();
 };
-//verificar amanhã por que esse midd não está passando na rota de delete no teste
+
 export const verfifyIdProjects = async (
   req: Request,
   res: Response,
@@ -71,6 +71,35 @@ export const verifyNameExistsTech = async (
   next: NextFunction
 ): Promise<Response | void> => {
   const { name } = request.body;
+  const { technology } = response.locals;
+  const id = parseInt(request.params.id);
+
+  let queryTemplate: string = `SELECT * FROM "projects_technologies" WHERE "technologyId" = $1
+  AND "projectId" = $2;`;
+
+  let queryConfig: QueryConfig = {
+    text: queryTemplate,
+    values: [technology, id],
+  };
+  const queryResult: QueryResult<IProjectsAndTecnologies> = await client.query(
+    queryConfig
+  );
+
+  if (queryResult.rowCount == 0) {
+    const message: Ierror = {
+      message: `This technology is already associated with the project`,
+    };
+    return response.status(409).json(message);
+  }
+
+  return next();
+};
+export const verifyTechExistTech = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
+  const { name } = req.body;
 
   let queryTemplate: string = `SELECT * FROM "technologies" WHERE name = $1;`;
 
@@ -79,18 +108,22 @@ export const verifyNameExistsTech = async (
     values: [name],
   };
   const queryResult = await client.query(queryConfig);
-
-  const foundMovie = queryResult.rows[0];
-  if (foundMovie) {
-    const message: Ierror = {
-      message: `This technology is already associated with the project`,
-    };
-    return response.status(409).json(message);
+  if (queryResult.rowCount == 0) {
+    return res.status(400).json({
+      message: "Technology not supported.",
+      options: [
+        "JavaScript",
+        "Python",
+        "React",
+        "Express.js",
+        "HTML",
+        "CSS",
+        "Django",
+        "PostgreSQL",
+        "MongoDB",
+      ],
+    });
   }
-
-  response.locals.tecnology = {
-    id: queryResult.rows[0].id,
-  };
-
+  res.locals.technology = queryResult.rows[0].id;
   return next();
 };

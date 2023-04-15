@@ -11,7 +11,7 @@ import server from "./server";
 import {
   verfifyIdDeveloperInfo,
   verifyIdExistsDevelopersInfo,
-  verifyNameDevelopers,
+  verifyEmailDevelopers,
 } from "./middlewares/middlewares";
 import {
   createProjects,
@@ -20,22 +20,22 @@ import {
   deleteTechProject,
   getProjectsTech,
   updateProjects,
-  verifyTechExistTech,
 } from "./logics/logictecnologies";
 import {
   verfifyIdProjects,
   verfifyIdProjectsDeveloper,
   verifyNameExistsTech,
+  verifyTechExistTech,
 } from "./middlewares/middlewarestecnologies";
 
 const app: Application = express();
 app.use(express.json());
-app.post("/developers", verifyNameDevelopers, createDevelopers);
+app.post("/developers", verifyEmailDevelopers, createDevelopers);
 app.get("/developers/:id", verfifyIdDeveloperInfo, getDevelopers);
 app.patch(
   "/developers/:id",
   verfifyIdDeveloperInfo,
-  verifyNameDevelopers,
+  verifyEmailDevelopers,
   updateDevelopers
 );
 app.delete("/developers/:id", verfifyIdDeveloperInfo, deleteDevelopers);
@@ -47,7 +47,7 @@ app.post(
 );
 
 app.post("/projects", verfifyIdProjectsDeveloper, createProjects);
-app.get("/projects/:id");
+app.get("/projects/:id", verfifyIdProjects, getProjectsTech);
 app.patch(
   "/projects/:id",
   verfifyIdProjects,
@@ -58,8 +58,8 @@ app.delete("/projects/:id", verfifyIdProjects, deleteProjects);
 app.post(
   "/projects/:id/technologies",
   verfifyIdProjects,
-  verifyNameExistsTech,
   verifyTechExistTech,
+  verifyNameExistsTech,
   createTechProjects
 );
 //verifyTechExistTech

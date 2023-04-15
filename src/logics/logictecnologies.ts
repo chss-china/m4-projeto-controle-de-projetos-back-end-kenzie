@@ -1,4 +1,4 @@
-import { Request, Response, response } from "express";
+import { NextFunction, Request, Response, response } from "express";
 import format from "pg-format";
 import { QueryConfig, QueryResult } from "pg";
 import {
@@ -29,33 +29,31 @@ export const createProjects = async (
 
   return res.status(201).json(queryResult.rows[0]);
 };
-//essa função está dando erro de sintaxe no ponto e também tem que retornar um array com varios objetos,
-//onde cada objeto é um item
+
 export const getProjectsTech = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  // const id: number = parseInt(req.params.id);
   const { params } = req;
   const queryString: string = format(
     `
   SELECT
-  pr.id AS "projectId",
-  pr."name" AS "projectName",
-  pr."description" AS "projectDescription",
-  pr."estimatedTime" AS "projectEstimatedTime",
-  pr."repository" AS "projectRepository",
-  pr."startDate" AS "projectStartDate",
-  pr."endDate" AS "projectEndDate",
-  pr."developerId" AS "projectDeveloperId",
-  pt."technologyId"
-  te."name" AS "technologyName"
-  FROM
+    pr.id AS "projectId",
+    pr."name" AS "projectName",
+    pr."description" AS "projectDescription",
+    pr."estimatedTime" AS "projectEstimatedTime",
+    pr."repository" AS "projectRepository",
+    pr."startDate" AS "projectStartDate",
+    pr."endDate" AS "projectEndDate",
+    pr."developerId" AS "projectDeveloperId",
+    pt."technologyId",
+    te."name" AS "technologyName"
+ FROM
     projects pr
  LEFT JOIN
- projects_technologies pt ON pr."id" = pt."id"
+    projects_technologies pt ON pr."id" = pt."projectId"
  LEFT JOIN
- technologies te ON pt."id" = te."id"
+    technologies te ON pt."technologyId" = te."id"
  WHERE id = (%L);
  `,
     params.id
@@ -105,74 +103,40 @@ export const deleteProjects = async (
   return res.status(204).send();
 };
 
-export const verifyTechExistTech = async (
-  req: Request,
-  res: Response
-): Promise<Response | void> => {
-  const name = {
-    name: req.body.name,
-  };
-  if (
-    name.name != "Javascript" &&
-    name.name != "Python" &&
-    name.name != "React" &&
-    name.name != "Express.js" &&
-    name.name != "HTML" &&
-    name.name != "CSS" &&
-    name.name != "Django" &&
-    name.name != "PostgreSQL" &&
-    name.name != "MongoDB"
-  ) {
-    return res.status(400).json({
-      message: "Technology not supported.",
-      options: [
-        "JavaScript",
-        "Python",
-        "React",
-        "Express.js",
-        "HTML",
-        "CSS",
-        "Django",
-        "PostgreSQL",
-        "MongoDB",
-      ],
-    });
-  }
-};
-//não funcionando
 export const createTechProjects = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const tecnologyId = response.locals.technology.id;
+  const { technology } = response.locals;
   const id = parseInt(req.params.id);
   console.log(id);
-  /*let queryString: string = `
+  let queryString: string = `
     INSERT INTO
-   projects_technologies ("technologyId","projectId","addedIn")
+      projects_technologies ("technologyId","projectId","addedIn")
     VALUES
       ($1,$2,$3);
     `;
   let queryConfig: QueryConfig = {
     text: queryString,
-    values: [tecnologyId, id, new Date()],
+    values: [technology, id, new Date()],
   };
-  queryString = ` SELECT
-  pr.id AS "projectId",
-  pr."name" AS "projectName",
-  pr."description" AS "projectDescription",
-  pr."estimatedTime" AS "projectEstimatedTime",
-  pr."repository" AS "projectRepository",
-  pr."startDate" AS "projectStartDate",
-  pr."endDate" AS "projectEndDate",
-  pt."technologyId"
-  te."name" AS "technologyName"
+  queryString = `
+  SELECT
+    pr.id AS "projectId",
+    pr."name" AS "projectName",
+    pr."description" AS "projectDescription",
+    pr."estimatedTime" AS "projectEstimatedTime",
+    pr."repository" AS "projectRepository",
+    pr."startDate" AS "projectStartDate",
+    pr."endDate" AS "projectEndDate",
+    pt."technologyId"
+    te."name" AS "technologyName"
   FROM
     projects pr
  LEFT JOIN
- projects_technologies pt ON pr."projectId" = pt."id"
+    projects_technologies pt ON pr."id" = pt."projectId"
  LEFT JOIN
- technologies te ON pt."technologyId" = te."id"
+    technologies te ON pt."technologyId" = te."id"
  WHERE pr."id" = $1; `;
 
   queryConfig = {
@@ -181,43 +145,40 @@ export const createTechProjects = async (
   };
   const queryResult: QueryResult<IProjectsAndTecnologies> = await client.query(
     queryConfig
-  );*/
+  );
 
-  return res.status(201).json("foi");
+  return res.status(201).json(queryResult.rows[0]);
 };
-//terminar depois
+
 export const deleteTechProject = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
   const projectId = parseInt(req.params.id);
   const nameTechnology = req.params.name;
-  const updateColumns: string[] = Object.keys(req.params.name);
-  const updateValues: string[] = Object.values(req.params.name);
-  // const name: string = req.params.name;
-  const queryTechnologyId: string = `
+
+  let queryTechnologyId: string = `
    SELECT * FROM technologies
    WHERE name = $1;
   `;
-  const queryFormat: string = format(
-    queryTechnologyId,
-    updateColumns,
-    updateValues
-  );
-  const queryConfig: QueryConfig = {
-    text: queryFormat,
+
+  let queryConfig: QueryConfig = {
+    text: queryTechnologyId,
     values: [nameTechnology],
   };
-  console.log(queryConfig);
+  queryTechnologyId = `
+  DELETE FROM 
+    projects_technologies
+  WHERE "technologyId" = $1
+  AND "projectId" = $2;
+  `;
+  queryConfig = {
+    text: queryTechnologyId,
+    values: [projectId],
+  };
   const queryResult: QueryResult<IProjectsAndTecnologies> = await client.query(
     queryConfig
   );
-  let result = queryResult.rows[0].technologyId;
-  const queryString2: string = `
-  DELETE FROM projects_technologies
-  WHERE "technologyId" = $1
-  AND "projectId" = $1;
-  `;
 
   const developer: IProjectsAndTecnologies = queryResult.rows[0];
   return res.status(204).send();

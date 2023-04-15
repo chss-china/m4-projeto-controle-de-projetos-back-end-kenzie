@@ -9,10 +9,9 @@ const verfifyIdDeveloperInfo = async (
 ): Promise<Response | void> => {
   const id = parseInt(req.params.id);
   const queryString: string = `
-  SELECT 
-    * 
+  SELECT  * 
   FROM
-   developers
+    developers
   WHERE 
    id = $1
   `;
@@ -30,7 +29,7 @@ const verfifyIdDeveloperInfo = async (
   res.locals.developer = queryResult.rows[0];
   return next();
 };
-export const verifyNameDevelopers = async (
+export const verifyEmailDevelopers = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -45,7 +44,7 @@ export const verifyNameDevelopers = async (
   const foundDeveloper: TDevelopers = queryResult.rows[0];
   if (foundDeveloper) {
     const message: Ierror = {
-      message: `Movie ${email} already exists!`,
+      message: `Email already exists.`,
     };
     return res.status(409).json(message);
   }

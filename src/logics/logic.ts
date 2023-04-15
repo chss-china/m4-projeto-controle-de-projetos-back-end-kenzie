@@ -54,10 +54,10 @@ const createDevelopersInfo = async (
   let queryString: string = format(
     `
     INSERT INTO
- developer_infos (%I)
+      developer_infos (%I)
     VALUES
       (%L)
-      RETURNING *;
+    RETURNING *;
     `,
     Object.keys(infoDevelopers),
     Object.values(infoDevelopers)
@@ -75,15 +75,15 @@ export const getDevelopers = async (
 ): Promise<Response> => {
   const queryString: string = `
   SELECT
-  de.id AS "developerId",
-  de."name" AS "developerName",
-  de."email" AS "developerEmail",
-  di."developerSince" AS "developerInfoDeveloperSince",
-  di."preferredOS" AS "developerInfoPreferredOS"
+    de.id AS "developerId",
+    de."name" AS "developerName",
+    de."email" AS "developerEmail",
+    di."developerSince" AS "developerInfoDeveloperSince",
+    di."preferredOS" AS "developerInfoPreferredOS"
   FROM
     developers de
  LEFT JOIN
-developer_infos di ON de."id" = di."developerId";
+    developer_infos di ON de."id" = di."developerId";
   `;
   const queryResult: QueryResult<DeveloperAndDeveloperInfo> =
     await client.query(queryString);
