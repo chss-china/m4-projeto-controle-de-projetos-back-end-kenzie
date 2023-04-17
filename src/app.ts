@@ -17,14 +17,16 @@ import {
   createProjects,
   createTechProjects,
   deleteProjects,
-  deleteTechProject,
   getProjectsTech,
+  removeTechFromProject,
   updateProjects,
 } from "./logics/logictecnologies";
 import {
+  checkTechnologyInProject,
   verfifyIdProjects,
   verfifyIdProjectsDeveloper,
   verifyNameExistsTech,
+  verifyTechExistBody,
   verifyTechExistTech,
 } from "./middlewares/middlewarestecnologies";
 
@@ -58,15 +60,16 @@ app.delete("/projects/:id", verfifyIdProjects, deleteProjects);
 app.post(
   "/projects/:id/technologies",
   verfifyIdProjects,
-  verifyTechExistTech,
+  verifyTechExistBody,
   verifyNameExistsTech,
   createTechProjects
 );
-//verifyTechExistTech
+
 app.delete(
   "/projects/:id/technologies/:name",
   verfifyIdProjects,
   verifyTechExistTech,
-  deleteTechProject
+  checkTechnologyInProject,
+  removeTechFromProject
 );
 export default app;

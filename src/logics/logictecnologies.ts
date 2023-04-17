@@ -1,10 +1,11 @@
 import { NextFunction, Request, Response, response } from "express";
-import format from "pg-format";
+import format, { string } from "pg-format";
 import { QueryConfig, QueryResult } from "pg";
 import {
   IProjects,
   IProjectsAndTecnologies,
   IProjectsRequest,
+  Itechnologies,
 } from "../interfaces/interfacetecnologies";
 import { client } from "../database";
 export const createProjects = async (
@@ -54,10 +55,11 @@ export const getProjectsTech = async (
     projects_technologies pt ON pr."id" = pt."projectId"
  LEFT JOIN
     technologies te ON pt."technologyId" = te."id"
- WHERE id = (%L);
+ WHERE pr.id = (%L) 
  `,
     params.id
   );
+
   const queryResult: QueryResult<IProjectsAndTecnologies> = await client.query(
     queryString
   );
@@ -94,7 +96,7 @@ export const deleteProjects = async (
 ): Promise<Response> => {
   const { params } = req;
   const queryString: string = format(
-    `DELETE FROM developers
+    `DELETE FROM projects
       WHERE id = (%L);`,
     params.id
   );
@@ -107,79 +109,79 @@ export const createTechProjects = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { technology } = response.locals;
-  const id = parseInt(req.params.id);
-  console.log(id);
-  let queryString: string = `
-    INSERT INTO
-      projects_technologies ("technologyId","projectId","addedIn")
-    VALUES
-      ($1,$2,$3);
-    `;
-  let queryConfig: QueryConfig = {
-    text: queryString,
-    values: [technology, id, new Date()],
-  };
-  queryString = `
-  SELECT
-    pr.id AS "projectId",
-    pr."name" AS "projectName",
-    pr."description" AS "projectDescription",
-    pr."estimatedTime" AS "projectEstimatedTime",
-    pr."repository" AS "projectRepository",
-    pr."startDate" AS "projectStartDate",
-    pr."endDate" AS "projectEndDate",
-    pt."technologyId"
-    te."name" AS "technologyName"
-  FROM
-    projects pr
- LEFT JOIN
-    projects_technologies pt ON pr."id" = pt."projectId"
- LEFT JOIN
-    technologies te ON pt."technologyId" = te."id"
- WHERE pr."id" = $1; `;
+  const projectId = parseInt(req.params.id);
+  const { name } = req.body;
 
-  queryConfig = {
-    text: queryString,
-    values: [id],
-  };
+  const technologyQuery = format(
+    "SELECT * FROM technologies WHERE name = %L",
+    name
+  );
+  const technologyResult = await client.query(technologyQuery);
+  const technology = technologyResult.rows[0];
+
+  const projectQuery = format(
+    "SELECT * FROM projects WHERE id = %L",
+    projectId
+  );
+  const projectResult = await client.query(projectQuery);
+  const project = projectResult.rows[0];
+  let queryString: string = format(
+    `INSERT INTO projects_technologies ("technologyId", "projectId", "addedIn")
+  VALUES (%L)
+  RETURNING "technologyId", "projectId"`,
+    [technology.id, project.id, new Date()]
+  );
   const queryResult: QueryResult<IProjectsAndTecnologies> = await client.query(
-    queryConfig
+    queryString
   );
 
-  return res.status(201).json(queryResult.rows[0]);
+  const projectsAndTechnologiesQuery = format(
+    `
+    SELECT
+          pr.id AS "projectId",
+          pr."name" AS "projectName",
+          pr."description" AS "projectDescription",
+          pr."estimatedTime" AS "projectEstimatedTime",
+          pr."repository" AS "projectRepository",
+          pr."startDate" AS "projectStartDate",
+          pr."endDate" AS "projectEndDate",
+          pt."technologyId",
+          te."name" AS "technologyName"
+        FROM projects pr
+        JOIN projects_technologies pt ON pt."projectId" = pr.id
+        JOIN technologies te ON te.id = pt."technologyId"
+        WHERE pr.id = (%L) AND pt."technologyId" = (%L);`,
+    projectId,
+    technology.id
+  );
+  const projectsAndTechnologiesResult: QueryResult<IProjectsAndTecnologies> =
+    await client.query(projectsAndTechnologiesQuery);
+
+  return res.status(201).json(projectsAndTechnologiesResult.rows[0]);
 };
 
-export const deleteTechProject = async (
+export const removeTechFromProject = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const projectId = parseInt(req.params.id);
-  const nameTechnology = req.params.name;
+  const { projectId } = req.params;
+  const techName = req.params.name;
 
-  let queryTechnologyId: string = `
-   SELECT * FROM technologies
-   WHERE name = $1;
-  `;
-
-  let queryConfig: QueryConfig = {
-    text: queryTechnologyId,
-    values: [nameTechnology],
-  };
-  queryTechnologyId = `
-  DELETE FROM 
-    projects_technologies
-  WHERE "technologyId" = $1
-  AND "projectId" = $2;
-  `;
-  queryConfig = {
-    text: queryTechnologyId,
-    values: [projectId],
-  };
-  const queryResult: QueryResult<IProjectsAndTecnologies> = await client.query(
-    queryConfig
+  const techQuery = format(
+    `SELECT id FROM technologies WHERE name = (%L)`,
+    techName
   );
 
-  const developer: IProjectsAndTecnologies = queryResult.rows[0];
+  const techResult = await client.query(techQuery);
+
+  const techId = techResult.rows[0].id;
+
+  const removeQuery = format(
+    'DELETE FROM projects_technologies WHERE "projectId" = (%L) AND "technologyId" = (%L)',
+    [projectId],
+    [techId]
+  );
+  await client.query(removeQuery);
+
   return res.status(204).send();
 };

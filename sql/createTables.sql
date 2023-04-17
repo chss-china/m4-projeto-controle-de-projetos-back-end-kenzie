@@ -13,6 +13,7 @@ CREATE TABLE developer_infos(
   "developerId" INTEGER NOT NULL UNIQUE,
    FOREIGN KEY ("developerId") REFERENCES developers("id") ON DELETE CASCADE
    );
+   
 
 CREATE TABLE projects(
  id SERIAL PRIMARY KEY,

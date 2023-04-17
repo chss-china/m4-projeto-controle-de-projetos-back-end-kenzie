@@ -11,6 +11,7 @@ interface TDevelopersinfo {
   referredOS: string;
   developerId?: number;
 }
+
 interface DeveloperAndDeveloperInfo {
   developerId: number;
   developerName: string;
