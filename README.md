@@ -1,5 +1,5 @@
 # **Controle de projetos - KenzieVelopers**
-
+## O resultado foi excelente obtendo nota maxima na entrega e passando em todos testes
 ## **Introdução**
 
 Uma startup de tecnologia e desenvolvimento web decidiu criar uma API Rest para gerenciar seus desenvolvedores e projetos. Como você é um dos novos integrantes da equipe, você foi o escolhido para desenvolver essa aplicação.
